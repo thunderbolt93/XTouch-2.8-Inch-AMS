@@ -797,7 +797,7 @@ lv_obj_t *ui_homeComponent_create(lv_obj_t *comp_parent)
     lv_obj_set_style_text_align(cui_mainScreenStopButton, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(cui_mainScreenStopButton, &ui_font_xlcd, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(cui_mainScreenStopButton, 4, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_color(cui_mainScreenStopButton, lv_color_hex(0xFF0000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(cui_mainScreenStopButton, lv_color_hex(0x888888), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(cui_mainScreenStopButton, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_width(cui_mainScreenStopButton, 1, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_left(cui_mainScreenStopButton, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -809,6 +809,8 @@ lv_obj_t *ui_homeComponent_create(lv_obj_t *comp_parent)
     lv_obj_set_style_bg_color(cui_mainScreenStopButton, lv_color_hex(0xff682a), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(cui_mainScreenStopButton, 255, LV_PART_MAIN | LV_STATE_PRESSED);
 
+    lv_obj_set_style_text_color(cui_mainScreenStopButton, lv_color_hex(0xFF0000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    
     lv_obj_t *cui_mainScreenProgressBar;
     cui_mainScreenProgressBar = lv_slider_create(cui_mainScreenPlayer);
     lv_slider_set_value(cui_mainScreenProgressBar, 60, LV_ANIM_OFF);
