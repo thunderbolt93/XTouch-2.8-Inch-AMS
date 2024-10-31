@@ -106,9 +106,17 @@ void xtouch_device_gcode_line(String line)
     xtouch_device_publish(result);
 }
 
+void ui_event_comp_controlComponent_controlScreenHomeConfirm() { onControlHome(NULL); }
+
 void xtouch_device_move_axis(String axis, double value, int speed)
 {
     char cmd[256];
+    if (!(bambuStatus.home_flag &1==1)|| 
+    !(bambuStatus.home_flag>>1 &1==1) ||
+    !(bambuStatus.home_flag>>2 &1==1)) {
+        ui_confirmPanel_show(LV_SYMBOL_WARNING " Start Homing Process?", ui_event_comp_controlComponent_controlScreenHomeConfirm);
+        return;
+    }
     sprintf(cmd, "M211 S \nM211 X1 Y1 Z1\nM1002 push_ref_mode\nG91 \nG1 %s%0.1f F%d\nM1002 pop_ref_mode\nM211 R\n", axis.c_str(), value, speed);
     xtouch_device_gcode_line(String(cmd));
 }

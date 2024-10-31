@@ -2,6 +2,11 @@
 #define _XLCD_CONNECTION
 
 #include "mbedtls/base64.h"
+#include <time.h>
+#define MY_NTP_SERVER "de.pool.ntp.org"
+#define MY_TZ "CET-1CEST,M3.5.0,M10.5.0/3"
+time_t now;
+tm tmst;
 
 String xtouch_wifi_setup_decodeString(String inputString)
 {
@@ -117,6 +122,40 @@ bool xtouch_wifi_setup()
     delay(1000);
     ConsoleInfo.print(F("[XTOUCH][CONNECTION] Connected to the WiFi network with IP: "));
     ConsoleInfo.println(WiFi.localIP());
+
+
+    
+    delay(1000);
+
+    lv_label_set_text(introScreenCaption, LV_SYMBOL_WIFI " Fetching time from NTP");
+    lv_timer_handler();
+    lv_task_handler();
+    delay(1000);
+
+    configTime(0, 0, MY_NTP_SERVER);  // 0, 0 because we will use TZ in the next line
+    setenv("TZ", MY_TZ, 1);            // Set environment variable with your time zone
+    tzset();
+    
+    time(&now);
+    localtime_r(&now, &tmst);
+
+    uint32_t start = millis();
+
+    while (tmst.tm_year + 1900 < 2000 && millis() - start < 30000){
+        time(&now);
+        localtime_r(&now, &tmst);
+        delay(1000);
+    }
+
+
+
+
+
+
+    lv_label_set_text(introScreenCaption, LV_SYMBOL_WIFI " Got time from NTP");
+    lv_timer_handler();
+    lv_task_handler();
+    delay(1000);
 
     return true;
 }

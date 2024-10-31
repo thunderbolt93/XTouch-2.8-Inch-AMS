@@ -46,6 +46,15 @@ void xtouch_mqtt_topic_setup()
     xtouch_mqtt_report_topic = xtouch_device_topic + String("/report");
 }
 
+void xtouch_mqtt_parse_tray(uint8_t tray_idx, char* color){
+
+    unsigned long long number = strtoll(color, NULL, 16);
+    number<<=8;
+    number|=tray_idx<<4;
+
+    xtouch_mqtt_sendMsg(XTOUCH_ON_AMS_SLOT_UPDATE,number);
+}
+
 String xtouch_mqtt_parse_printer_type(String type_str)
 {
     if (type_str == "3DPrinter-X1")
@@ -210,6 +219,7 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
         if (incomingJson["print"].containsKey("gcode_file"))
         {
             strcpy(bambuStatus.gcode_file, incomingJson["print"]["gcode_file"]);
+            xtouch_mqtt_sendMsg(XTOUCH_ON_FILENAME_UPDATE, 0);
         }
 
         if (incomingJson["print"].containsKey("gcode_file_prepare_percent"))
@@ -471,17 +481,30 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
         {
             // amsStatus.processAmsStatus(incomingJson["print"].as<JsonObject>());
 
-            if (incomingJson["ams"].containsKey("ams_exist_bits"))
+            if (incomingJson["print"]["ams"].containsKey("ams_exist_bits"))
             {
-                bambuStatus.ams_exist_bits = incomingJson["ams"]["ams_exist_bits"].as<String>().toInt();
+                bambuStatus.ams_exist_bits = incomingJson["print"]["ams"]["ams_exist_bits"].as<String>().toInt();
             }
 
-            if (incomingJson.containsKey("ams_status"))
+            if (incomingJson["print"].containsKey("ams_status"))
             {
-                int ams_status = incomingJson["ams_status"].as<int>();
+                int ams_status = incomingJson["print"]["ams_status"].as<int>();
                 xtouch_ams_parse_status(ams_status);
             }
 
+            
+
+            if (incomingJson["print"]["ams"].containsKey("tray_pre"))
+            {
+                bambuStatus.m_tray_pre = incomingJson["print"]["ams"]["tray_pre"].as<int>();
+                xtouch_mqtt_sendMsg(XTOUCH_ON_AMS_SLOT_UPDATE,0xFFFFFFFF);
+            }
+
+            if (incomingJson["print"]["ams"].containsKey("tray_now"))
+            {
+                bambuStatus.m_tray_now = incomingJson["print"]["ams"]["tray_now"].as<int>();
+                xtouch_mqtt_sendMsg(XTOUCH_ON_AMS_SLOT_UPDATE,0xFFFFFFFF);
+            }
             if (incomingJson["print"]["ams"].containsKey("ams"))
             {
 
@@ -495,58 +518,71 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
                 long int last_read_done_bits = bambuStatus.tray_read_done_bits;
                 long int last_ams_version = bambuStatus.ams_version;
 
-                if (incomingJson["ams"].containsKey("ams_exist_bits"))
-                {
-                    bambuStatus.ams_exist_bits = incomingJson["ams"]["ams_exist_bits"].as<String>().toInt();
-                }
-                if (incomingJson["ams"].containsKey("tray_exist_bits"))
-                {
-                    bambuStatus.tray_exist_bits = incomingJson["ams"]["tray_exist_bits"].as<String>().toInt();
-                }
-                if (incomingJson["ams"].containsKey("tray_read_done_bits"))
-                {
-                    bambuStatus.tray_read_done_bits = incomingJson["ams"]["tray_read_done_bits"].as<String>().toInt();
-                }
-                if (incomingJson["ams"].containsKey("tray_reading_bits"))
-                {
-                    bambuStatus.tray_reading_bits = incomingJson["ams"]["tray_reading_bits"].as<String>().toInt();
-                    bambuStatus.ams_support_use_ams = true;
-                }
-                if (incomingJson["ams"].containsKey("tray_is_bbl_bits"))
-                {
-                    bambuStatus.tray_is_bbl_bits = incomingJson["ams"]["tray_is_bbl_bits"].as<String>().toInt();
-                }
-                if (incomingJson["ams"].containsKey("version"))
-                {
-                    if (incomingJson["ams"]["version"].is<int>())
-                    {
-
-                        bambuStatus.ams_version = incomingJson["ams"]["version"].as<int>();
+                char color[16];
+                
+                for (uint8_t ams_idx=0;ams_idx<array.size();ams_idx++){
+                    JsonArray trays = array[ams_idx]["tray"].as<JsonArray>();
+                    for (uint8_t tray_idx=0;tray_idx<trays.size();tray_idx++){
+                        memset(color,0,16);
+                        trays[tray_idx]["tray_color"].as<String>().toCharArray(color,16);
+                        color[6]=0;
+                        xtouch_mqtt_parse_tray(tray_idx+1,color);
                     }
                 }
-                if (incomingJson["ams"].containsKey("tray_now"))
+
+                if (incomingJson["print"]["ams"].containsKey("ams_exist_bits"))
                 {
-                    xtouch_ams_parse_tray_now(incomingJson["ams"]["tray_now"]);
+                    bambuStatus.ams_exist_bits = incomingJson["print"]["ams"]["ams_exist_bits"].as<String>().toInt();
                 }
-                if (incomingJson["ams"].containsKey("tray_tar"))
+                if (incomingJson["print"]["ams"].containsKey("tray_exist_bits"))
                 {
-                    bambuStatus.m_tray_tar = incomingJson["ams"]["tray_tar"].as<int>();
+                    bambuStatus.tray_exist_bits = incomingJson["print"]["ams"]["tray_exist_bits"].as<String>().toInt();
                 }
-                if (incomingJson["ams"].containsKey("ams_rfid_status"))
+                if (incomingJson["print"]["ams"].containsKey("tray_read_done_bits"))
                 {
-                    bambuStatus.ams_rfid_status = incomingJson["ams"]["ams_rfid_status"].as<int>();
+                    bambuStatus.tray_read_done_bits = incomingJson["print"]["ams"]["tray_read_done_bits"].as<String>().toInt();
+                }
+                if (incomingJson["print"]["ams"].containsKey("tray_reading_bits"))
+                {
+                    bambuStatus.tray_reading_bits = incomingJson["print"]["ams"]["tray_reading_bits"].as<String>().toInt();
+                    bambuStatus.ams_support_use_ams = true;
+                }
+                if (incomingJson["print"]["ams"].containsKey("tray_is_bbl_bits"))
+                {
+                    bambuStatus.tray_is_bbl_bits = incomingJson["print"]["ams"]["tray_is_bbl_bits"].as<String>().toInt();
+                }
+                if (incomingJson["print"]["ams"].containsKey("version"))
+                {
+                    if (incomingJson["print"]["ams"]["version"].is<int>())
+                    {
+
+                        bambuStatus.ams_version = incomingJson["print"]["ams"]["version"].as<int>();
+                    }
+                }
+                
+                if (incomingJson["print"]["ams"].containsKey("tray_tar"))
+                {
+                    bambuStatus.m_tray_tar = incomingJson["print"]["ams"]["tray_tar"].as<int>();
+                    
+                    xtouch_mqtt_sendMsg(XTOUCH_ON_AMS_SLOT_UPDATE,0xFFFFFFFF);
+                }
+                
+
+                if (incomingJson["print"]["ams"].containsKey("ams_rfid_status"))
+                {
+                    bambuStatus.ams_rfid_status = incomingJson["print"]["ams"]["ams_rfid_status"].as<int>();
                 }
 
-                if (incomingJson["ams"].containsKey("humidity"))
+                if (incomingJson["print"]["ams"].containsKey("humidity"))
                 {
-                    if (incomingJson["ams"]["humidity"].is<String>())
+                    if (incomingJson["print"]["ams"]["humidity"].is<String>())
                     {
-                        String humidity_str = incomingJson["ams"]["humidity"].as<String>();
+                        String humidity_str = incomingJson["print"]["ams"]["humidity"].as<String>();
 
                         bambuStatus.ams_humidity = atoi(humidity_str.c_str());
                     }
                 }
-                if (incomingJson["ams"].containsKey("insert_flag") || incomingJson["ams"].containsKey("power_on_flag") || incomingJson["ams"].containsKey("calibrate_remain_flag"))
+                if (incomingJson["print"]["ams"].containsKey("insert_flag") || incomingJson["print"]["ams"].containsKey("power_on_flag") || incomingJson["print"]["ams"].containsKey("calibrate_remain_flag"))
                 {
                     if (bambuStatus.ams_user_setting_hold_count > 0)
                     {
@@ -554,17 +590,17 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
                     }
                     else
                     {
-                        if (incomingJson["ams"].containsKey("insert_flag"))
+                        if (incomingJson["print"]["ams"].containsKey("insert_flag"))
                         {
-                            bambuStatus.ams_insert_flag = incomingJson["ams"]["insert_flag"].as<bool>();
+                            bambuStatus.ams_insert_flag = incomingJson["print"]["ams"]["insert_flag"].as<bool>();
                         }
-                        if (incomingJson["ams"].containsKey("power_on_flag"))
+                        if (incomingJson["print"]["ams"].containsKey("power_on_flag"))
                         {
-                            bambuStatus.ams_power_on_flag = incomingJson["ams"]["power_on_flag"].as<bool>();
+                            bambuStatus.ams_power_on_flag = incomingJson["print"]["ams"]["power_on_flag"].as<bool>();
                         }
-                        if (incomingJson["ams"].containsKey("calibrate_remain_flag"))
+                        if (incomingJson["print"]["ams"].containsKey("calibrate_remain_flag"))
                         {
-                            bambuStatus.ams_calibrate_remain_flag = incomingJson["ams"]["calibrate_remain_flag"].as<bool>();
+                            bambuStatus.ams_calibrate_remain_flag = incomingJson["print"]["ams"]["calibrate_remain_flag"].as<bool>();
                         }
                     }
                 }
@@ -581,6 +617,11 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
         if (incomingJson["print"].containsKey("vt_tray"))
         {
             bambuStatus.ams_support_virtual_tray = true;
+            char color[16];
+            memset(color,0,16);
+            incomingJson["print"]["vt_tray"]["tray_color"].as<String>().toCharArray(color,16);
+            color[6]=0;
+            xtouch_mqtt_parse_tray(0,color);
         }
         else
         {
@@ -602,6 +643,8 @@ void xtouch_mqtt_processPushStatus(JsonDocument &incomingJson)
     }
 }
 
+
+char payload_buffer[8096];
 void xtouch_mqtt_parseMessage(char *topic, byte *payload, unsigned int length, byte type = 0)
 {
 
@@ -611,7 +654,15 @@ void xtouch_mqtt_parseMessage(char *topic, byte *payload, unsigned int length, b
     DynamicJsonDocument amsFilter(128);
     amsFilter["print"]["*"] = true;
     amsFilter["camera"]["*"] = true;
-    amsFilter["print"]["ams"] = type == 0;
+    amsFilter["print"]["ams"] = true;
+
+    memset(payload_buffer,0,8096);
+    strncpy(payload_buffer,(char*)payload,length);
+
+
+
+    printf("%s\n",payload);
+
 
     auto deserializeError = deserializeJson(incomingJson, payload, length, DeserializationOption::Filter(amsFilter));
 
@@ -625,14 +676,30 @@ void xtouch_mqtt_parseMessage(char *topic, byte *payload, unsigned int length, b
             xtouch_pubSubClient.disconnect();
         }
 
+        
         if (incomingJson.containsKey("print") && incomingJson["print"].containsKey("command"))
         {
 
             String command = incomingJson["print"]["command"].as<String>();
 
+            printf("got command %s\n",command);
+        }
+
+        if (incomingJson.containsKey("print") && incomingJson["print"].containsKey("command"))
+        {
+
+            String command = incomingJson["print"]["command"].as<String>();
+
+            printf("got command %s\n",command);
             if (command == "push_status")
             {
                 xtouch_mqtt_processPushStatus(incomingJson);
+            }
+            if (command == "ams_change_filament")
+            {
+                bambuStatus.m_tray_tar=incomingJson["target"].as<int>();
+                printf("target tray is %d\n",bambuStatus.m_tray_tar);
+                xtouch_mqtt_sendMsg(XTOUCH_ON_AMS_SLOT_UPDATE,0xFFFFFFFF);
             }
             else if (command == "gcode_line")
             {
@@ -687,12 +754,12 @@ void xtouch_mqtt_parseMessage(char *topic, byte *payload, unsigned int length, b
 
 void xtouch_pubSubClient_streamCallback(char *topic, byte *payload, unsigned int length)
 {
-    xtouch_mqtt_parseMessage(topic, (byte *)stream.get_buffer(), stream.current_length(), 0);
+    // xtouch_mqtt_parseMessage(topic, (byte *)stream.get_buffer(), stream.current_length(), 0);
 
-    if (stream.includes("\"ams\""))
-    {
-        xtouch_mqtt_parseMessage(topic, (byte *)stream.get_buffer(), stream.current_length(), 1);
-    }
+    // if (stream.includes("\"ams\""))
+    // {
+    xtouch_mqtt_parseMessage(topic, (byte *)stream.get_buffer(), stream.current_length(), 1);
+    // }
 
     stream.flush();
 }

@@ -265,7 +265,7 @@ void _ui_seconds_to_timeleft(uint32_t seconds, char *ret)
 
    if (days > 0)
    {
-      sprintf(ret, "%02dd %02dh %02dm", days, hours, minutes);
+      sprintf(ret, "%02dd %02dh", days, hours);
    }
    else if (hours > 0)
    {

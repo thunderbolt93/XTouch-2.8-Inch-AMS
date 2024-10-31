@@ -5,7 +5,7 @@ void xtouch_ams_parse_tray_now(const char *tray_now)
 {
     if (strlen(tray_now) == 0)
     {
-        return;
+        // return;
     }
     else
     {
@@ -17,11 +17,12 @@ void xtouch_ams_parse_tray_now(const char *tray_now)
         }
         else if (tray_now_int == 255)
         {
-            bambuStatus.m_ams_id = 0;
-            bambuStatus.m_tray_id = 0;
+            bambuStatus.m_ams_id = -1;
+            bambuStatus.m_tray_id = -1;
         }
     }
 }
+
 
 void xtouch_ams_parse_status(int ams_status)
 {

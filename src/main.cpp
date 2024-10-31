@@ -1,5 +1,6 @@
 #include <driver/i2s.h>
 #include <Arduino.h>
+#include <ArduinoOTA.h>
 #include <ArduinoJson.h>
 #include "xtouch/debug.h"
 #include "xtouch/paths.h"
@@ -75,6 +76,40 @@ void setup()
   }
   xtouch_mqtt_setup();
   xtouch_chamber_timer_init();
+
+  
+  ArduinoOTA
+    .onStart([]() {
+      String type;
+      if (ArduinoOTA.getCommand() == U_FLASH)
+        type = "sketch";
+      else // U_SPIFFS
+        type = "filesystem";
+    })
+    .onEnd([]() {
+     
+    })
+    .onProgress([](unsigned int progress, unsigned int total) {
+      uint8_t prog = (progress / (total / 100));
+     
+
+    })
+    .onError([](ota_error_t error) {
+      
+      // if (error == OTA_AUTH_ERROR) dma_display->print(" Auth Failed");
+      // else if (error == OTA_BEGIN_ERROR) dma_display->print(" Begin Failed");
+      // else if (error == OTA_CONNECT_ERROR) dma_display->print(" Connect Failed");
+      // else if (error == OTA_RECEIVE_ERROR) dma_display->print(" Receive Failed");
+      // else if (error == OTA_END_ERROR) dma_display->print(" End Failed");
+
+      
+      delay(1000);
+      ESP.restart();
+    });
+  
+  ArduinoOTA.begin();
+
+
 }
 
 void loop()
@@ -82,4 +117,5 @@ void loop()
   lv_timer_handler();
   lv_task_handler();
   xtouch_mqtt_loop();
+  ArduinoOTA.handle();
 }
