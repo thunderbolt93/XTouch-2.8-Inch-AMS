@@ -409,6 +409,7 @@ void onXTouchPrintStatus(lv_event_t *e)
     {
     case XTOUCH_PRINT_STATUS_PAUSED:
         lv_label_set_text(playPauseButton, "z");
+        lv_obj_set_style_text_color(playPauseButton, lv_color_hex(0x2aff00), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_clear_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER], LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENCENTRAL], LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENIDLE], LV_OBJ_FLAG_HIDDEN);
@@ -416,8 +417,8 @@ void onXTouchPrintStatus(lv_event_t *e)
 
         break;
     case XTOUCH_PRINT_STATUS_RUNNING:
-
         lv_label_set_text(playPauseButton, "0");
+        lv_obj_set_style_text_color(playPauseButton, lv_color_hex(0xFF8000), LV_PART_MAIN | LV_STATE_DEFAULT);
         lv_obj_clear_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENPLAYER], LV_OBJ_FLAG_HIDDEN);
         lv_obj_clear_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENCENTRAL], LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(comp_homeComponent[UI_COMP_HOMECOMPONENT_MAINSCREENLEFT_MAINSCREENIDLE], LV_OBJ_FLAG_HIDDEN);
@@ -807,6 +808,8 @@ lv_obj_t *ui_homeComponent_create(lv_obj_t *comp_parent)
     lv_obj_set_style_pad_column(cui_mainScreenStopButton, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(cui_mainScreenStopButton, lv_color_hex(0xff682a), LV_PART_MAIN | LV_STATE_PRESSED);
     lv_obj_set_style_bg_opa(cui_mainScreenStopButton, 255, LV_PART_MAIN | LV_STATE_PRESSED);
+
+    lv_obj_set_style_text_color(cui_mainScreenStopButton, lv_color_hex(0xFF0000), LV_PART_MAIN | LV_STATE_DEFAULT);
 
     lv_obj_t *cui_mainScreenProgressBar;
     cui_mainScreenProgressBar = lv_slider_create(cui_mainScreenPlayer);
