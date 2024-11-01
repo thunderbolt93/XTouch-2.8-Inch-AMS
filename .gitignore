@@ -3,3 +3,4 @@
 .DS_Store
 node_modules
 .history
+src/xtouch/bbl/bbl-errors.c
